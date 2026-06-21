@@ -1,0 +1,9 @@
+venv/
+config.json
+result/
+downloads/
+__pycache__/
+*.pyc
+*.part
+run.log
+.DS_Store

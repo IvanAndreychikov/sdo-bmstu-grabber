@@ -1,0 +1,11 @@
+{
+  "username": "your_login",
+  "password": "your_password",
+  "base_url": "https://sdo.bmstu.ru",
+  "course_id": 86,
+  "start_section": 3,
+  "end_section": null,
+  "output_dir": "result",
+  "skip_existing": true,
+  "video_format": "best"
+}
