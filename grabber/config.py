@@ -39,6 +39,13 @@ class Config:
     # Skip items whose target file already exists (makes re-runs cheap).
     skip_existing: bool = True
 
+    # Parallel byte-range connections used per file. The BMSTU server sits on a
+    # ~150 ms-RTT path where a single TCP stream ramps slowly and sometimes
+    # stalls; splitting each file into ~4 range segments overlaps the slow-start
+    # and lets a stalled segment reconnect without holding up the whole file.
+    # The server caps total throughput (~4-5 MB/s) so more than ~4 gives little.
+    concurrency: int = 4
+
     # yt-dlp format selector. ``best`` grabs the single highest-quality muxed
     # stream rutube offers (all rutube variants carry both audio and video).
     video_format: str = "best"
@@ -74,12 +81,13 @@ class Config:
             "start_section": "SDO_START_SECTION",
             "end_section": "SDO_END_SECTION",
             "output_dir": "SDO_OUTPUT_DIR",
+            "concurrency": "SDO_CONCURRENCY",
         }
         for attr, env in env_map.items():
             raw = os.environ.get(env)
             if raw is None:
                 continue
-            if attr in {"course_id", "start_section", "end_section"}:
+            if attr in {"course_id", "start_section", "end_section", "concurrency"}:
                 setattr(self, attr, int(raw))
             else:
                 setattr(self, attr, raw)

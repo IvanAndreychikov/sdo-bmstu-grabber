@@ -1,30 +1,33 @@
-# Структура целевого сайта (sdo.bmstu.ru)
+# Target site structure (sdo.bmstu.ru)
 
-Заметки по результатам разведки. Сайт — это **Moodle** (СДО МГТУ им. Баумана).
+Reconnaissance notes. The site is **Moodle** (BMSTU distance-learning system).
 
-## 1. Авторизация
+## 1. Authentication
 
-- Форма логина: `GET https://sdo.bmstu.ru/login/index.php`
-  - На странице есть скрытое поле `logintoken` (CSRF-токен) — его надо
-    распарсить и отправить вместе с кредами.
-- `POST https://sdo.bmstu.ru/login/index.php` с полями:
+- Login form: `GET https://sdo.bmstu.ru/login/index.php`
+  - The page has a hidden `logintoken` field (CSRF token) — it must be parsed
+    out and submitted together with the credentials.
+- `POST https://sdo.bmstu.ru/login/index.php` with fields:
   `username`, `password`, `logintoken`.
-- При успехе происходит редирект на `/my/`, сессия держится на cookie
-  `MoodleSession`. Дальше все запросы идут в рамках одной `requests.Session`.
+- On success it redirects to `/my/`; the session is held by the `MoodleSession`
+  cookie. All subsequent requests reuse a single `requests.Session`.
 
-## 2. Структура курса
+## 2. Course structure
 
-- Курс открывается по `GET /course/view.php?id=86`.
-- Конкретная тема — `GET /course/view.php?id=86&section=<N>`.
-- На странице курса каждая секция — это `<li class="section" data-number="N">`.
-  - Найдено **17 секций (data-number 0..16)**.
-  - Имя секции — в элементе с классом `.sectionname`.
+- The course opens at `GET /course/view.php?id=86`.
+- A specific topic: `GET /course/view.php?id=86&section=<N>`.
+- The course title (used as the top-level folder name) is in the page
+  `<h1>` (`.page-header-headings h1`):
+  **"Продвинутый специалист по анализу больших данных (Middle data scientist)"**.
+- On the course page each section is `<li class="section" data-number="N">`.
+  - **17 sections found (data-number 0..16)**.
+  - The section name is in an element with class `.sectionname`.
 
-### Карта секций курса id=86
+### Section map of course id=86
 
-| data-number | Название |
+| data-number | Name |
 |---|---|
-| 0 | (служебная, без названия) |
+| 0 | (service, no name) |
 | 1 | Введение |
 | 2 | Входное тестирование |
 | 3 | 1. Рекуррентные нейронные сети. LSTM слои |
@@ -42,56 +45,76 @@
 | 15 | 12. flask приложение. Выведение моделей в production |
 | 16 | Итоговая аттестация |
 
-Учебные темы начинаются с **section=3** (как и указал заказчик) и идут до конца.
-Граббер по умолчанию обходит секции `start_section=3 .. end_section=макс`.
+Content topics start at **section=3** (as requested) and run to the end. By
+default the grabber walks sections `start_section=3 .. end_section=max`.
 
-## 3. Содержимое секции (модули/активности)
+## 3. Section content (modules / activities)
 
-Внутри секции каждый элемент — `<li class="activity modtype_*">`:
+Inside a section every item is `<li class="activity modtype_*">`:
 
-- **`modtype_label`** — текстовый блок. Именно сюда встроены видео:
-  внутри лежат `<iframe>` с rutube. В секции 3 один label содержал **5 видео**.
-- **`modtype_resource`** — файл (презентация). Имя активности —
-  в `.instancename` (напр. «Презентация: Рекуррентные нейронные сети. LSTM слои»).
+- **`modtype_label`** — a text block. Videos are embedded here: it contains the
+  rutube `<iframe>`s or HTML5 `<video>` tags. In section 3 a single label held
+  **5 videos**.
+- **`modtype_resource`** — a file (presentation). The activity name is in
+  `.instancename` (e.g. "Презентация: Рекуррентные нейронные сети. LSTM слои").
+- **`modtype_url`** — an external link (e.g. a code notebook on Google Drive).
 
-### ВАЖНО: два разных механизма доставки видео
+### IMPORTANT: two different video delivery mechanisms
 
-В курсе **два способа** размещения видео — оба внутри `modtype_label`:
+The course uses **two ways** of hosting videos — both inside `modtype_label`:
 
-1. **rutube (секции 3–4)** — `<iframe src="rutube.ru/play/embed/...">`.
-2. **Видео на сервере Moodle (секции 5–15)** — HTML5
+1. **rutube (sections 3–4)** — `<iframe src="rutube.ru/play/embed/...">`.
+2. **Moodle-hosted videos (sections 5–15)** — HTML5
    `<video><source src="https://sdo.bmstu.ru/pluginfile.php/.../mod_label/intro/NNN.M.mp4">`.
-   - Требуют **авторизованную сессию** (без cookie → HTTP 407).
-   - Поддерживают Range-запросы (докачка возможна, статус 206).
-   - **Крупные**: ~1 ГБ на ролик (всего по секциям 5–15 ≈ **21.8 ГБ**, 26 видео).
-   - Осмысленного названия у ролика нет (label-текст = служебный
-     «Выбрать элемент»), поэтому имя берём из имени файла URL (`402.1.mp4` и т.п.).
+   - Require an **authenticated session** (without the cookie → HTTP 407).
+   - Support Range requests (resumable, status 206).
+   - **Large**: ~1 GB per clip (sections 5–15 total ≈ **21.8 GB**, 26 videos).
+   - The clip has no meaningful title (label text is just the editor placeholder
+     "Выбрать элемент"), so the name is taken from the URL file name
+     (`402.1.mp4`, etc.).
 
-Парсер обязан искать **оба** варианта, иначе секции 5–15 выглядят «пустыми».
+The parser must look for **both** variants, otherwise sections 5–15 appear
+"empty".
 
-Прочее:
-- Секция 6 содержит модуль `modtype_url` («Ноутбук с кодом») — внешняя ссылка.
-  Сохраняем как `.url`-ярлык, сам внешний файл не тянем.
-- Секция 16 («Итоговая аттестация») — без видео и файлов.
+Other:
+- Section 6 contains a `modtype_url` module ("Ноутбук с кодом") — an external
+  link to a **Google Drive file**
+  (`drive.google.com/file/d/<ID>/view`, real file `11.8 PyTorch.ipynb`). We
+  download the actual file with `gdown` and place it next to the videos; if the
+  download fails we fall back to saving a `.url` shortcut.
+- Section 16 ("Итоговая аттестация") has no videos or files.
 
-### Видео (rutube)
+### Videos (rutube)
 
-- Встроены как `<iframe src="https://rutube.ru/play/embed/<ID>/?p=<TOKEN>">`.
-  `<ID>` — id приватного видео, `<TOKEN>` (`p=`) — приватный токен доступа.
-- Метаданные/потоки берутся через API:
+- Embedded as `<iframe src="https://rutube.ru/play/embed/<ID>/?p=<TOKEN>">`.
+  `<ID>` is the private video id, `<TOKEN>` (`p=`) is the private access token.
+- Metadata/streams come from the API:
   `GET https://rutube.ru/api/play/options/<ID>/?no_404=true&referer=...&p=<TOKEN>`
-  → JSON с `title`, `duration` и `video_balancer.m3u8` (мастер-плейлист HLS).
-- HLS отдаёт несколько качеств (для примера: 144p..**1280x720**), каждый
-  вариант — единый muxed-поток (видео avc1 + аудио mp4a вместе).
-- `yt-dlp` понимает приватный embed-URL «как есть», видит все качества и по
-  селектору `best` сам берёт максимальное. Имя видео тоже отдаёт сам.
+  → JSON with `title`, `duration` and `video_balancer.m3u8` (HLS master
+  playlist).
+- HLS offers several qualities (e.g. 144p..**1280x720**); each variant is a
+  single muxed stream (avc1 video + mp4a audio together).
+- `yt-dlp` understands the private embed URL as-is, sees all qualities and picks
+  the maximum with the `best` selector. It also returns the video title.
 
-### Презентации (файлы)
+### Presentations (files)
 
-- Страница ресурса: `GET /mod/resource/view.php?id=<MODID>`.
-  - Если Moodle настроен на прямую отдачу — отвечает самим файлом
-    (смотрим `Content-Type` / `Content-Disposition`).
-  - Иначе отдаёт HTML со ссылкой на реальный файл вида
-    `https://sdo.bmstu.ru/pluginfile.php/.../<имя файла>.pdf`
-    (ссылка в `.resourceworkaround a` или любой `a[href*="pluginfile.php"]`).
-  - Имя файла берём из последнего сегмента URL (url-decoded).
+- Resource page: `GET /mod/resource/view.php?id=<MODID>`.
+  - If Moodle is set to serve directly — it responds with the file itself
+    (check `Content-Type` / `Content-Disposition`).
+  - Otherwise it returns HTML with a link to the real file like
+    `https://sdo.bmstu.ru/pluginfile.php/.../<file name>.pdf`
+    (link in `.resourceworkaround a` or any `a[href*="pluginfile.php"]`).
+  - The file name is taken from the last URL segment (url-decoded).
+
+### Linked files (url modules)
+
+- URL module page: `GET /mod/url/view.php?id=<MODID>`. The external target is in
+  `.urlworkaround a[href]` (or the first off-site link on the page).
+- If the target is on Google Drive (`drive.google.com` / `docs.google.com`), the
+  file id is extracted (`/d/<ID>` or `?id=<ID>`) and downloaded with `gdown`,
+  which also reports the real file name.
+- If the target is a plain direct file (non-HTML `Content-Type` or an
+  attachment), it is streamed directly.
+- Otherwise (an HTML page, a quota error, etc.) we fall back to a `.url`
+  Windows shortcut.

@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from .http_download import stream_download
+from .http_download import download_file
 from .models import VideoItem
 from .moodle_client import MoodleClient
 from .utils import filename_from_url, sanitize_filename
@@ -26,11 +26,13 @@ class VideoDownloader:
         video_format: str = "best",
         ffmpeg_location: str | None = None,
         skip_existing: bool = True,
+        connections: int = 4,
     ):
         self.client = client
         self.video_format = video_format
         self.ffmpeg_location = ffmpeg_location
         self.skip_existing = skip_existing
+        self.connections = connections
 
     def download(self, video: VideoItem, dest_dir: Path) -> Path | None:
         dest_dir.mkdir(parents=True, exist_ok=True)
@@ -53,7 +55,9 @@ class VideoDownloader:
             log.info("  ✓ video already downloaded: %s", dest.name)
             return dest
 
-        stream_download(self.client.session, video.url, dest)
+        download_file(
+            self.client.session, video.url, dest, connections=self.connections
+        )
         log.info("  ✓ saved video: %s", dest.name)
         return dest
 

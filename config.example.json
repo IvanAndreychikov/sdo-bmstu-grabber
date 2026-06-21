@@ -7,5 +7,6 @@
   "end_section": null,
   "output_dir": "result",
   "skip_existing": true,
+  "concurrency": 4,
   "video_format": "best"
 }

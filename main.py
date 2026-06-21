@@ -32,7 +32,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Last section number to process (default: last available)")
     p.add_argument("--only-section", type=int,
                    help="Process exactly one section (shortcut for start==end)")
-    p.add_argument("--output-dir", help="Destination directory (default ./downloads)")
+    p.add_argument("--output-dir", help="Destination directory (default ./result)")
+    p.add_argument("--concurrency", type=int,
+                   help="Parallel downloads (default 4)")
     p.add_argument("--no-skip", action="store_true",
                    help="Re-download even if the target file already exists")
     p.add_argument("-v", "--verbose", action="store_true", help="Debug logging")
@@ -55,6 +57,8 @@ def apply_args(cfg: Config, args: argparse.Namespace) -> None:
         cfg.end_section = args.only_section
     if args.output_dir:
         cfg.output_dir = args.output_dir
+    if args.concurrency is not None:
+        cfg.concurrency = args.concurrency
     if args.no_skip:
         cfg.skip_existing = False
 

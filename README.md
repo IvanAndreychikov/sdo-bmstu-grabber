@@ -2,12 +2,16 @@
 
 *Read this in other languages: [Русский](README.ru.md).*
 
-Downloads lecture videos (rutube) and course presentations from the BMSTU
-distance-learning system (`sdo.bmstu.ru`, Moodle), preserving the video titles
-and the course structure as folders.
+Downloads lecture videos, presentations and linked files (e.g. code notebooks)
+from the BMSTU distance-learning system (`sdo.bmstu.ru`, Moodle), preserving the
+video titles and the course structure as folders.
 
-- Videos are fetched at the **highest available quality**.
-- The on-disk layout mirrors the course structure: one folder per section.
+- Videos are fetched at the **highest available quality** (both rutube embeds
+  and videos served straight from Moodle).
+- The on-disk layout mirrors the course: a top-level folder named after the
+  course, then one folder per section.
+- Linked files (Google Drive notebooks, etc.) are downloaded next to the videos;
+  if a link can't be downloaded, a `.url` shortcut is saved instead.
 - Re-running **does not re-download** files that are already present.
 
 For details on how the site works see [SITE_STRUCTURE.md](SITE_STRUCTURE.md),
@@ -19,7 +23,7 @@ All steps from cloning to running (commands for **cmd** on Windows):
 
 ```cmd
 :: 1. Clone the repository and enter the project folder
-git clone <repository-URL> sdo-bmstu-grabber
+git clone https://github.com/IvanAndreychikov/sdo-bmstu-grabber sdo-bmstu-grabber
 cd sdo-bmstu-grabber
 
 :: 2. Copy the config template
@@ -54,7 +58,7 @@ venv\Scripts\python.exe main.py --only-section 3
 venv\Scripts\python.exe main.py --output-dir "D:\courses\dl" --no-skip
 
 :: pass credentials directly on the command line, without config.json
-venv\Scripts\python.exe main.py --username ivan.andreychikov --password ***
+venv\Scripts\python.exe main.py --username my-personal-login --password my-personal-password
 ```
 
 ### Useful flags
@@ -65,6 +69,7 @@ venv\Scripts\python.exe main.py --username ivan.andreychikov --password ***
 | `--end-section N` | which section to stop at (default: the last one) |
 | `--only-section N` | process exactly one section |
 | `--output-dir PATH` | where to save the files |
+| `--concurrency N` | parallel connections per file (default 4) |
 | `--no-skip` | re-download even files that already exist |
 | `-v` | verbose logging |
 
@@ -72,13 +77,20 @@ venv\Scripts\python.exe main.py --username ivan.andreychikov --password ***
 
 ```
 result/
-└── 03 1. Рекуррентные нейронные сети. LSTM слои/
-    ├── 01 - <video title>.mp4
-    ├── 02 - <video title>.mp4
-    ├── ...
-    └── 06 - Рекуррентные нейронные сети. LSTM.pdf
+└── Продвинутый специалист по анализу больших данных (Middle data scientist)/
+    ├── 03 1. Рекуррентные нейронные сети. LSTM слои/
+    │   ├── 01 - <video title>.mp4
+    │   ├── 02 - <video title>.mp4
+    │   ├── ...
+    │   └── 06 - Рекуррентные нейронные сети. LSTM.pdf
+    └── 06 3. Обзор библиотеки PyTorch.../
+        ├── 01 - <video title>.mp4
+        ├── ...
+        └── 06 - 11.8 PyTorch.ipynb        # linked file from Google Drive
 ```
 
 By default everything is saved into the `result/` folder in the project root
-(it is in `.gitignore`). Videos (`.mp4`) and presentations (`.pdf`/`.pptx`) sit
-side by side in the section folder — they are separate files.
+(it is in `.gitignore`), under a single top-level folder named after the course.
+Videos (`.mp4`), presentations (`.pdf`/`.pptx`) and linked files
+(`.ipynb`/etc.) sit side by side in the section folder — they are separate
+files.

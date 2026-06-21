@@ -23,6 +23,15 @@ class CourseParser:
         self.course_id = course_id
 
     # -- course level ----------------------------------------------------------
+    def course_name(self) -> str:
+        """The human-readable course title (used as the top-level folder)."""
+        soup = self.client.get_soup(f"/course/view.php?id={self.course_id}")
+        for sel in (".page-header-headings h1", "#page-header h1", "header h1", "h1"):
+            el = soup.select_one(sel)
+            if el and el.get_text(strip=True):
+                return el.get_text(strip=True)
+        return f"course_{self.course_id}"
+
     def section_map(self) -> dict[int, str]:
         """Return ``{section_number: section_name}`` for the whole course."""
         soup = self.client.get_soup(f"/course/view.php?id={self.course_id}")

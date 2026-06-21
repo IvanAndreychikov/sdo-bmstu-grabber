@@ -6,7 +6,8 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
-from .http_download import stream_download
+from .external import download_external
+from .http_download import download_file
 from .models import FileItem
 from .moodle_client import MoodleClient
 from .utils import filename_from_url, sanitize_filename
@@ -17,9 +18,12 @@ log = logging.getLogger(__name__)
 class FileDownloader:
     """Handles Moodle ``resource`` files and ``url`` (link) modules."""
 
-    def __init__(self, client: MoodleClient, skip_existing: bool = True):
+    def __init__(
+        self, client: MoodleClient, skip_existing: bool = True, connections: int = 4
+    ):
         self.client = client
         self.skip_existing = skip_existing
+        self.connections = connections
 
     def download(self, item: FileItem, dest_dir: Path) -> Path | None:
         dest_dir.mkdir(parents=True, exist_ok=True)
@@ -41,7 +45,9 @@ class FileDownloader:
             log.info("  ✓ file already downloaded: %s", dest.name)
             return dest
 
-        stream_download(self.client.session, file_url, dest)
+        download_file(
+            self.client.session, file_url, dest, connections=self.connections
+        )
         log.info("  ✓ saved file: %s", dest.name)
         return dest
 
@@ -75,22 +81,46 @@ class FileDownloader:
 
     # -- url (external link) ---------------------------------------------------
     def _save_link(self, item: FileItem, dest_dir: Path) -> Path | None:
-        """Resolve the URL module and save it as a Windows .url shortcut.
+        """Resolve a URL module: download the real file it points at, and only
+        fall back to a ``.url`` shortcut when the file can't be fetched.
 
-        These point at external resources (e.g. code notebooks); we preserve
-        the link rather than blindly downloading possibly-huge external files.
+        These links commonly target a Google Drive file (e.g. a code notebook);
+        we pull the actual file so it sits next to the videos/presentations.
         """
+        prefix = f"{item.order:02d}"
         target = self._resolve_external_url(item.url)
         if target is None:
             log.warning("  ✗ no link found for url module: %s", item.name)
             return None
-        dest = dest_dir / f"{item.order:02d} - {sanitize_filename(item.name)}.url"
-        if dest.exists() and self.skip_existing:
-            log.info("  ✓ link already saved: %s", dest.name)
-            return dest
+
+        existing = self._find_existing(dest_dir, prefix)
+        if existing is not None and self.skip_existing:
+            log.info("  ✓ link target already downloaded: %s", existing.name)
+            return existing
+
+        # Primary strategy: download the actual linked file.
+        downloaded = download_external(
+            self.client.session, target, dest_dir, prefix
+        )
+        if downloaded is not None:
+            log.info("  ✓ saved linked file: %s", downloaded.name)
+            return downloaded
+
+        # Fallback: keep the link as a Windows .url shortcut.
+        dest = dest_dir / f"{prefix} - {sanitize_filename(item.name)}.url"
         dest.write_text(f"[InternetShortcut]\nURL={target}\n", encoding="utf-8")
-        log.info("  ✓ saved link: %s -> %s", dest.name, target)
+        log.info("  ✓ saved link shortcut (download unavailable): %s -> %s",
+                 dest.name, target)
         return dest
+
+    @staticmethod
+    def _find_existing(dest_dir: Path, prefix: str) -> Path | None:
+        if not dest_dir.exists():
+            return None
+        for path in sorted(dest_dir.glob(f"{prefix} - *")):
+            if path.is_file() and not path.name.endswith(".part"):
+                return path
+        return None
 
     def _resolve_external_url(self, view_url: str) -> str | None:
         resp = self.client.get(view_url)
