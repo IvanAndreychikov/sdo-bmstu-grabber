@@ -19,7 +19,10 @@ and on the code architecture see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Quick start
 
-All steps from cloning to running (commands for **cmd** on Windows):
+The tool is cross-platform (Windows, macOS, Linux). All steps from cloning to
+running:
+
+**Windows (cmd):**
 
 ```cmd
 :: 1. Clone the repository and enter the project folder
@@ -44,9 +47,38 @@ venv\Scripts\python.exe -m pip install -r requirements.txt
 venv\Scripts\python.exe main.py
 ```
 
+**macOS / Linux (bash):**
+
+```bash
+# 1. Clone the repository and enter the project folder
+git clone https://github.com/IvanAndreychikov/sdo-bmstu-grabber sdo-bmstu-grabber
+cd sdo-bmstu-grabber
+
+# 2. Copy the config template
+cp config.example.json config.json
+
+# 3. Open config.json and put in your SDO login/password
+#    (optionally change output_dir, start_section, etc.)
+nano config.json            # or vim / any editor
+
+# 4. Create a virtual environment
+python3 -m venv venv
+
+# 5. Install dependencies (ffmpeg ships with imageio-ffmpeg inside the venv)
+venv/bin/python -m pip install -r requirements.txt
+
+# 6. Run — downloads the whole course from section=3 to the end into result/
+venv/bin/python main.py
+```
+
+> On Linux, make sure the shell uses a UTF-8 locale (e.g. `LANG=C.UTF-8` or
+> `…UTF-8`) so the Cyrillic course/section folder names are written correctly.
+> macOS and most desktop Linux distributions use UTF-8 by default.
+
 Instead of editing `config.json`, credentials and settings can be supplied via
 environment variables (`SDO_USERNAME`, `SDO_PASSWORD`, `SDO_OUTPUT_DIR`, ...) or
-command-line arguments (see below).
+command-line arguments (see below). On macOS/Linux use `venv/bin/python` wherever
+the examples below show `venv\Scripts\python.exe`.
 
 ## Additional run options
 

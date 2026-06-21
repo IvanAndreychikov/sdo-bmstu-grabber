@@ -81,7 +81,8 @@ Other:
   link to a **Google Drive file**
   (`drive.google.com/file/d/<ID>/view`, real file `11.8 PyTorch.ipynb`). We
   download the actual file with `gdown` and place it next to the videos; if the
-  download fails we fall back to saving a `.url` shortcut.
+  download fails we fall back to an OS-native link shortcut
+  (`.url`/`.webloc`/`.desktop`).
 - Section 16 ("Итоговая аттестация") has no videos or files.
 
 ### Videos (rutube)
@@ -116,5 +117,5 @@ Other:
   which also reports the real file name.
 - If the target is a plain direct file (non-HTML `Content-Type` or an
   attachment), it is streamed directly.
-- Otherwise (an HTML page, a quota error, etc.) we fall back to a `.url`
-  Windows shortcut.
+- Otherwise (an HTML page, a quota error, etc.) we fall back to an OS-native
+  link shortcut (`.url` on Windows, `.webloc` on macOS, `.desktop` on Linux).

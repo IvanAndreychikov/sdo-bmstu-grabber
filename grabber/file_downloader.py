@@ -10,7 +10,7 @@ from .external import download_external
 from .http_download import download_file
 from .models import FileItem
 from .moodle_client import MoodleClient
-from .utils import filename_from_url, sanitize_filename
+from .utils import filename_from_url, sanitize_filename, write_link_shortcut
 
 log = logging.getLogger(__name__)
 
@@ -106,9 +106,9 @@ class FileDownloader:
             log.info("  ✓ saved linked file: %s", downloaded.name)
             return downloaded
 
-        # Fallback: keep the link as a Windows .url shortcut.
-        dest = dest_dir / f"{prefix} - {sanitize_filename(item.name)}.url"
-        dest.write_text(f"[InternetShortcut]\nURL={target}\n", encoding="utf-8")
+        # Fallback: keep the link as an OS-native clickable shortcut.
+        name = sanitize_filename(item.name)
+        dest = write_link_shortcut(dest_dir, f"{prefix} - {name}", name, target)
         log.info("  ✓ saved link shortcut (download unavailable): %s -> %s",
                  dest.name, target)
         return dest

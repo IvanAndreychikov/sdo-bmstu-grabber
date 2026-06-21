@@ -70,7 +70,8 @@ sdo-bmstu-grabber/
   usually points at a Google Drive file (a code notebook). The primary strategy
   is to download the real file (Google Drive via `gdown`, or a direct file by
   streaming) so it sits next to the videos; only if that fails do we fall back
-  to saving a `.url` Windows shortcut.
+  to saving an OS-native link shortcut (`.url` on Windows, `.webloc` on macOS,
+  `.desktop` on Linux — see `write_link_shortcut` in `utils.py`).
 - **Idempotency.** Already-downloaded files are skipped (`skip_existing`) so a
   long run can be restarted without re-downloading.
 - **Segmented download ([http_download.py](grabber/http_download.py)).** The SDO

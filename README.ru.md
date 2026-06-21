@@ -19,7 +19,10 @@
 
 ## Быстрый старт
 
-Все шаги от клонирования до запуска (команды для **cmd** на Windows):
+Инструмент кросс-платформенный (Windows, macOS, Linux). Все шаги от
+клонирования до запуска:
+
+**Windows (cmd):**
 
 ```cmd
 :: 1. Склонировать репозиторий и перейти в папку проекта
@@ -44,9 +47,39 @@ venv\Scripts\python.exe -m pip install -r requirements.txt
 venv\Scripts\python.exe main.py
 ```
 
+**macOS / Linux (bash):**
+
+```bash
+# 1. Склонировать репозиторий и перейти в папку проекта
+git clone https://github.com/IvanAndreychikov/sdo-bmstu-grabber sdo-bmstu-grabber
+cd sdo-bmstu-grabber
+
+# 2. Скопировать шаблон конфига
+cp config.example.json config.json
+
+# 3. Открыть config.json и вписать свои логин/пароль от СДО
+#    (при желании поменять output_dir, start_section и т.д.)
+nano config.json            # или vim / любой редактор
+
+# 4. Создать виртуальное окружение
+python3 -m venv venv
+
+# 5. Установить зависимости (ffmpeg приходит пакетом imageio-ffmpeg в venv)
+venv/bin/python -m pip install -r requirements.txt
+
+# 6. Запустить — скачает весь курс с темы section=3 до конца в папку result/
+venv/bin/python main.py
+```
+
+> На Linux убедитесь, что в окружении используется UTF-8 локаль
+> (например, `LANG=C.UTF-8` или `…UTF-8`) — иначе кириллические имена папок
+> курса/секций могут записаться некорректно. На macOS и большинстве
+> десктопных дистрибутивов Linux UTF-8 по умолчанию.
+
 Вместо правки `config.json` креды и параметры можно задать переменными
 окружения (`SDO_USERNAME`, `SDO_PASSWORD`, `SDO_OUTPUT_DIR`, ...) или
-аргументами командной строки (см. ниже).
+аргументами командной строки (см. ниже). На macOS/Linux используйте
+`venv/bin/python` там, где в примерах ниже указан `venv\Scripts\python.exe`.
 
 ## Дополнительные варианты запуска
 
