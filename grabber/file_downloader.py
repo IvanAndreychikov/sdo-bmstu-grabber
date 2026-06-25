@@ -10,7 +10,10 @@ from .external import download_external
 from .http_download import download_file
 from .models import FileItem
 from .moodle_client import MoodleClient
-from .utils import filename_from_url, sanitize_filename, write_link_shortcut
+from .utils import (
+    disposition_filename, filename_from_url, sanitize_filename,
+    write_link_shortcut,
+)
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +59,8 @@ class FileDownloader:
         resp = self.client.get(view_url)
         content_type = (resp.headers.get("Content-Type") or "").lower()
         if "text/html" not in content_type:
-            return resp.url, _disposition_name(resp.headers.get("Content-Disposition"))
+            return resp.url, disposition_filename(
+                resp.headers.get("Content-Disposition"))
 
         soup = BeautifulSoup(resp.text, "lxml")
         link = soup.select_one(
@@ -76,8 +80,8 @@ class FileDownloader:
         raw = suggested or filename_from_url(file_url)
         if "." in raw:
             stem, ext = raw.rsplit(".", 1)
-            return f"{prefix} - {sanitize_filename(stem)}.{ext.lower()}"
-        return f"{prefix} - {sanitize_filename(activity_name)}"
+            return f"{sanitize_filename(f'{prefix} - {stem}')}.{ext.lower()}"
+        return sanitize_filename(f"{prefix} - {activity_name}")
 
     # -- url (external link) ---------------------------------------------------
     def _save_link(self, item: FileItem, dest_dir: Path) -> Path | None:
@@ -108,7 +112,8 @@ class FileDownloader:
 
         # Fallback: keep the link as an OS-native clickable shortcut.
         name = sanitize_filename(item.name)
-        dest = write_link_shortcut(dest_dir, f"{prefix} - {name}", name, target)
+        stem = sanitize_filename(f"{prefix} - {item.name}")
+        dest = write_link_shortcut(dest_dir, stem, name, target)
         log.info("  ✓ saved link shortcut (download unavailable): %s -> %s",
                  dest.name, target)
         return dest
@@ -137,13 +142,3 @@ class FileDownloader:
                     link = a
                     break
         return link["href"] if link else None
-
-
-def _disposition_name(header: str | None) -> str | None:
-    if not header:
-        return None
-    for part in header.split(";"):
-        part = part.strip()
-        if part.lower().startswith("filename="):
-            return part.split("=", 1)[1].strip().strip('"')
-    return None

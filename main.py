@@ -35,6 +35,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-dir", help="Destination directory (default ./result)")
     p.add_argument("--concurrency", type=int,
                    help="Parallel downloads (default 4)")
+    p.add_argument("--max-name-length", type=int,
+                   help="Max characters per folder/file name (default 36, keeps "
+                        "paths under Windows MAX_PATH); 0 = no truncation")
     p.add_argument("--no-skip", action="store_true",
                    help="Re-download even if the target file already exists")
     p.add_argument("-v", "--verbose", action="store_true", help="Debug logging")
@@ -59,6 +62,8 @@ def apply_args(cfg: Config, args: argparse.Namespace) -> None:
         cfg.output_dir = args.output_dir
     if args.concurrency is not None:
         cfg.concurrency = args.concurrency
+    if args.max_name_length is not None:
+        cfg.max_name_length = args.max_name_length
     if args.no_skip:
         cfg.skip_existing = False
 

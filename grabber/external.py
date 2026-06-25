@@ -16,7 +16,7 @@ from pathlib import Path
 import requests
 
 from .http_download import download_file
-from .utils import filename_from_url, sanitize_filename
+from .utils import disposition_filename, filename_from_url, sanitize_filename
 
 log = logging.getLogger(__name__)
 
@@ -97,11 +97,11 @@ def _download_direct(
     if "text/html" in content_type and "attachment" not in disposition.lower():
         return None
 
-    name = _disposition_name(disposition) or filename_from_url(url)
+    name = disposition_filename(disposition) or filename_from_url(url)
     if not name or "." not in name:
         return None
-    dest = dest_dir / f"{prefix} - {sanitize_filename(name.rsplit('.', 1)[0])}." \
-                      f"{name.rsplit('.', 1)[1].lower()}"
+    stem, _, ext = name.rpartition(".")
+    dest = dest_dir / f"{sanitize_filename(f'{prefix} - {stem}')}.{ext.lower()}"
     try:
         download_file(session, head.url if hasattr(head, "url") else url, dest,
                       connections=4)
@@ -109,11 +109,3 @@ def _download_direct(
         log.warning("  direct download failed for %s: %s", url, exc)
         return None
     return dest
-
-
-def _disposition_name(header: str) -> str | None:
-    for part in header.split(";"):
-        part = part.strip()
-        if part.lower().startswith("filename="):
-            return part.split("=", 1)[1].strip().strip('"')
-    return None

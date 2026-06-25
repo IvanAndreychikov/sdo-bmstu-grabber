@@ -4,3 +4,4 @@ lxml>=5.0
 yt-dlp>=2024.0
 imageio-ffmpeg>=0.5
 gdown>=5.0
+xhtml2pdf>=0.2.11

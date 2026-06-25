@@ -50,6 +50,31 @@ class Config:
     # stream rutube offers (all rutube variants carry both audio and video).
     video_format: str = "best"
 
+    # Output canvas for composited MTS Link webinars (the screen-share is the
+    # main picture with the speaker's camera as a corner PiP). 1080p keeps shared
+    # slides/code legible; drop to 1280x720 for smaller files / faster encoding.
+    webinar_width: int = 1920
+    webinar_height: int = 1080
+
+    # Webinar encoder: "auto" uses the NVIDIA GPU (NVENC) when one is actually
+    # present and works, otherwise falls back to CPU (libx264). Force with
+    # "nvenc" / "cpu".
+    webinar_encoder: str = "auto"
+
+    # Fraction of CPU cores webinar download/compositing may use. Keeps the
+    # system responsive (ffmpeg also runs at below-normal priority) instead of
+    # eating every core.
+    webinar_cpu_fraction: float = 0.75
+
+    # Max characters per folder/file name. The course nests deeply (course →
+    # module → topic → lesson → file); long Cyrillic names can push a path past
+    # Windows' 260-char MAX_PATH, after which many media players and Explorer
+    # can't open the file. The small default keeps the longest path well under
+    # that. Set to 0 (or any value ≥ ~120) to effectively turn truncation OFF and
+    # keep full names — sensible on Linux/macOS, or on Windows with long-path-aware
+    # tools. A safety cap on *bytes* always applies so names stay valid on Linux.
+    max_name_length: int = 36
+
     def resolved_output_dir(self) -> Path:
         path = Path(self.output_dir)
         if not path.is_absolute():

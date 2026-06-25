@@ -2,17 +2,29 @@
 
 *Read this in other languages: [Русский](README.ru.md).*
 
-Downloads lecture videos, presentations and linked files (e.g. code notebooks)
-from the BMSTU distance-learning system (`sdo.bmstu.ru`, Moodle), preserving the
-video titles and the course structure as folders.
+Downloads lecture videos, webinars, presentations, linked files (e.g. code
+notebooks) and text/quiz pages from the BMSTU distance-learning system
+(`sdo.bmstu.ru`, Moodle), preserving the video titles and the full course
+structure as folders.
 
-- Videos are fetched at the **highest available quality** (both rutube embeds
-  and videos served straight from Moodle).
-- The on-disk layout mirrors the course: a top-level folder named after the
-  course, then one folder per section.
+- Videos are fetched at the **highest available quality** — both rutube embeds
+  (inline or inside `mod/page` lessons) and videos served straight from Moodle.
+- **Webinars** (MTS Link / webinar.ru recordings) are downloaded and composited
+  into one picture-in-picture mp4 — the shared screen (or the presenter's slide
+  deck) as the main picture with the speaker's camera in the top-right corner
+  (NVIDIA NVENC used when present, CPU fallback otherwise).
+- **Deeply nested sections** are handled: the course tree is walked recursively,
+  so modules → topics → individual lessons are all found and mirrored as nested
+  folders.
+- **Text pages, quizzes and feedback** are saved as **PDF** (without ever
+  starting a quiz attempt), so no written material is lost.
 - Linked files (Google Drive notebooks, etc.) are downloaded next to the videos;
   if a link can't be downloaded, a `.url` shortcut is saved instead.
 - Re-running **does not re-download** files that are already present.
+
+> Choose the course with `course_id` (and `start_section`) in `config.json` or
+> `--course-id` / `--start-section`. E.g. `course_id=86` is the recorded-lessons
+> course; `course_id=297` is the webinar-based "Data Science PRO" course.
 
 For details on how the site works see [SITE_STRUCTURE.md](SITE_STRUCTURE.md),
 and on the code architecture see [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -97,11 +109,13 @@ venv\Scripts\python.exe main.py --username my-personal-login --password my-perso
 
 | Flag | Purpose |
 |---|---|
+| `--course-id N` | which course to download (default from config) |
 | `--start-section N` | which section to start from (default 3) |
 | `--end-section N` | which section to stop at (default: the last one) |
 | `--only-section N` | process exactly one section |
 | `--output-dir PATH` | where to save the files |
 | `--concurrency N` | parallel connections per file (default 4) |
+| `--max-name-length N` | max chars per folder/file name (default 36, keeps paths under Windows MAX_PATH); `0` = full names |
 | `--no-skip` | re-download even files that already exist |
 | `-v` | verbose logging |
 
@@ -109,20 +123,29 @@ venv\Scripts\python.exe main.py --username my-personal-login --password my-perso
 
 ```
 result/
-└── Продвинутый специалист по анализу больших данных (Middle data scientist)/
-    ├── 03 1. Рекуррентные нейронные сети. LSTM слои/
-    │   ├── 01 - <video title>.mp4
-    │   ├── 02 - <video title>.mp4
-    │   ├── ...
-    │   └── 06 - Рекуррентные нейронные сети. LSTM.pdf
-    └── 06 3. Обзор библиотеки PyTorch.../
-        ├── 01 - <video title>.mp4
-        ├── ...
-        └── 06 - 11.8 PyTorch.ipynb        # linked file from Google Drive
+├── Продвинутый специалист по анализу больших данных (Middle data scientist)/
+│   ├── 03 1. Рекуррентные нейронные сети. LSTM слои/
+│   │   ├── 01 - <video title>.mp4
+│   │   ├── ...
+│   │   └── 06 - Рекуррентные нейронные сети. LSTM.pdf
+│   └── 06 3. Обзор библиотеки PyTorch.../
+│       ├── 01 - <video title>.mp4
+│       └── 06 - 11.8 PyTorch.ipynb        # linked file from Google Drive
+└── Наука о данных профессиональный уровень (Data Science PRO)/   # course_id=297
+    ├── 07 Вебинары 16748/
+    │   ├── 01 - Вебинар 1 от 27.01.2026.mp4     # composited PiP webinar
+    │   └── ...
+    └── 12 Материалы курса/                       # deeply nested subsections
+        └── 01 Модуль 1/
+            └── 01 Тема 1. Введение в Big data…/
+                └── 01 1.1. Введение в предмет/
+                    ├── 01 - Data Science, 1 часть.mp4    # video from a mod/page
+                    ├── 02 - 1.1 Введение в Big Data.pdf  # presentation
+                    └── 01 - Тест 1.pdf                   # quiz captured as PDF
 ```
 
 By default everything is saved into the `result/` folder in the project root
 (it is in `.gitignore`), under a single top-level folder named after the course.
-Videos (`.mp4`), presentations (`.pdf`/`.pptx`) and linked files
-(`.ipynb`/etc.) sit side by side in the section folder — they are separate
+Videos (`.mp4`), webinars (`.mp4`), presentations (`.pdf`/`.pptx`) and linked
+files (`.ipynb`/etc.) sit side by side in the section folder — they are separate
 files.

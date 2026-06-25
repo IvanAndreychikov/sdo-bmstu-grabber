@@ -35,6 +35,51 @@ class FileItem:
 
 
 @dataclass
+class DocItem:
+    """A module whose content is saved as a document (PDF, HTML fallback).
+
+    Covers Moodle modules that are not a downloadable file or a video but still
+    carry material worth keeping:
+      * ``page``     — a ``mod/page`` text lesson (its rendered content);
+      * ``quiz``     — a ``mod/quiz`` view page (description/instructions);
+      * ``feedback`` — a ``mod/feedback`` view page;
+      * ``assign``   — a ``mod/assign`` assignment description.
+    Only the visible view page is captured — no attempt/submission is started.
+    """
+
+    url: str            # view URL of the module
+    name: str           # human-readable activity name
+    order: int          # 1-based position within its section
+    kind: str = "page"  # "page" | "quiz" | "feedback" | "assign"
+
+
+@dataclass
+class SectionNode:
+    """A node in the (possibly deeply nested) course-section tree."""
+
+    number: int                 # Moodle section number (data-number)
+    name: str
+    parent: int | None = None   # parent section number, or None for top-level
+    index: int = 0              # folder-order prefix (section number at the top
+    #                             level, 1-based sibling order when nested)
+
+
+@dataclass
+class WebinarItem:
+    """An MTS Link (webinar.ru) webinar recording embedded via a Moodle
+    ``mod/mtslink`` module.
+
+    Unlike a plain lecture video, the recording is not a single file: it is an
+    event-log timeline of several HLS streams (speaker camera + audio, and one
+    or more screen-shares). It is downloaded and composited into one mp4.
+    """
+
+    url: str            # view URL of the mtslink module
+    name: str           # human-readable activity name (e.g. "Вебинар 1 от ...")
+    order: int          # 1-based position within its section
+
+
+@dataclass
 class Section:
     """One course section/topic with its videos and files."""
 
@@ -42,7 +87,9 @@ class Section:
     name: str
     videos: list[VideoItem] = field(default_factory=list)
     files: list[FileItem] = field(default_factory=list)
+    webinars: list[WebinarItem] = field(default_factory=list)
+    docs: list[DocItem] = field(default_factory=list)
 
     @property
     def is_empty(self) -> bool:
-        return not self.videos and not self.files
+        return not (self.videos or self.files or self.webinars or self.docs)

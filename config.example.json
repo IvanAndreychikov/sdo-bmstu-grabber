@@ -8,5 +8,10 @@
   "output_dir": "result",
   "skip_existing": true,
   "concurrency": 4,
-  "video_format": "best"
+  "video_format": "best",
+  "webinar_width": 1920,
+  "webinar_height": 1080,
+  "webinar_encoder": "auto",
+  "webinar_cpu_fraction": 0.75,
+  "max_name_length": 36
 }
